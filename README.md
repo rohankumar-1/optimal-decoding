@@ -10,15 +10,17 @@ Also, instead of normal DoLa, can we dynamically adjust alpha, via adaptive-DoLa
 
 
 # TODO (priority order)
-- [ ] fix DoLa generation (need to redo order of ops)
+- [ ] DoLa generation
     - [ ] add relative top filter from paper
     - [ ] add repitition penalty
 - add stopping criteria properly
 - [ ] implement beam search
-- [ ] implement baseline generation
-- [ ] 
+    - add each beam to heap, evaluate each beam, keep top k beams
 - [ ] Support batch size > 1
 
 
 
 Do we need to train lm_heads for each layer? Seems bad to only use last layer's lm_head on all hidden states.
+
+I think the DoLa implementation is still wrong: do we log_softmax before or after the difference?
+
