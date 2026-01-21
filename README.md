@@ -17,7 +17,7 @@ Also, instead of normal DoLa, can we dynamically adjust alpha, via adaptive-DoLa
 - [ ] implement beam search
     - add each beam to heap, evaluate each beam, keep top k beams
 - [ ] Support batch size > 1
-
+- [ ] tfqa open ended needs to use repetition penalty
 
 
 Do we need to train lm_heads for each layer? Seems bad to only use last layer's lm_head on all hidden states.

@@ -46,6 +46,8 @@ class DoLa:
         input_ids = self.tokenizer(input_text, return_tensors="pt").input_ids.to(self.device)
         if config.mode == 'dola':
             outputs = self._dola_generate(input_ids, config)
+        elif config.mode == 'adaptive-dola':
+            outputs = self._adaptive_dola_generate(input_ids, config)
         elif config.mode == 'baseline':
             outputs = self._baseline_generate(input_ids, config)
         elif config.mode == 'beam-dola':
@@ -76,7 +78,6 @@ class DoLa:
 
     def _beam_baseline_generate(self, input_ids, config: DoLaConfig):
         raise NotImplementedError("Beam baseline generation is not implemented")
-
 
     def _dola_generate(self, input_ids, config: DoLaConfig):
         """ CURRENTLY ONLY SUPPORT BATCH SIZE 1 """
@@ -134,6 +135,10 @@ class DoLa:
 
         return result
 
+
+    def _adaptive_dola_generate(self, input_ids, config: DoLaConfig):
+        raise NotImplementedError("Adaptive DoLa generation is not implemented")
+
     
 
     def _relative_top_filter(self, scores, relative_top=0.1, filter_value=-float("Inf"), min_tokens_to_keep=1):
@@ -146,45 +151,6 @@ class DoLa:
         probs_thresh = probs_thresh.unsqueeze(-1)
         scores_normalized[scores_normalized < probs_thresh] = filter_value
         return scores_normalized
-
-    def _sample_from_logits(self, logits, deterministic=False, temperature=1.0, top_p=0.0, top_k=0):
-        if deterministic:
-            return torch.argmax(logits, dim=-1).view(1,1)
-        logits = logits / temperature
-        if top_p > 0.0:
-            logits = self._top_p_filtering(logits, top_p)
-        if top_k > 0:
-            logits = self._top_k_filtering(logits, top_k)
-        probs = F.softmax(logits, dim=-1)
-        return torch.multinomial(probs, num_samples=1).view(1,1)
-
-    def _top_p_filtering(self, logits, top_p):
-        sorted_logits, sorted_indices = torch.sort(logits, descending=True, dim=-1)
-        sorted_probs = F.softmax(sorted_logits, dim=-1)
-        cumsum_probs = torch.cumsum(sorted_probs, dim=-1)
-
-        sorted_indices_to_remove = cumsum_probs > top_p
-        sorted_indices_to_remove[..., 0] = False
-
-        indices_to_remove = torch.zeros_like(logits, dtype=torch.bool)
-        indices_to_remove.scatter_(-1, sorted_indices, sorted_indices_to_remove)
-
-        logits[indices_to_remove] = -float('inf')
-
-        return logits
-
-    def _top_k_filtering(self, logits, top_k):
-        top_k = min(top_k, logits.size(-1))
-        topk_logits, topk_indices = torch.topk(logits, top_k, dim=-1)
-        
-        indices_to_remove = torch.ones_like(logits, dtype=torch.bool)
-        indices_to_remove.scatter_(-1, topk_indices, False)
-        
-        logits[indices_to_remove] = -float('inf')
-        
-        return logits
-
-
 
 
 
